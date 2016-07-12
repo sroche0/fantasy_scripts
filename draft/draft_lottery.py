@@ -7,13 +7,9 @@ def main():
         players_in_draft = json.load(f)
 
     # Combines all the possible combinations into a pool to be referenced by the random number selection
-    master_combo_pool = []
+    combo_pool, lotto_order = [], []
     for key, combos in players_in_draft.items():
-        master_combo_pool.extend(combos)
-
-    combo_pool = list(master_combo_pool)
-
-    lotto_order = []
+        combo_pool.extend(combos)
 
     while players_in_draft:
         odds = print_odds(players_in_draft, combo_pool, lotto_order)
@@ -65,14 +61,15 @@ def print_odds(teams_left, combo_pool, lotto_order):
         odds = round(float(len(combos)) / float(len(combo_pool)) * 100, 2)
         projected.append((team, odds))
 
-    projected.sort(key=getKey, reverse=True)
+    projected.sort(key=get_key, reverse=True)
     for index, team in enumerate(projected):
         print '{} {}%'.format('{}.'.format((team[0] + ' ').upper().ljust(18, '.')), team[1])
 
     return projected
 
 
-def getKey(item):
+def get_key(item):
     return item[1]
 
-main()
+if __name__ == '__main__':
+    main()
