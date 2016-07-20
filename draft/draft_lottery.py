@@ -34,7 +34,7 @@ class Lottery:
 
         self.print_odds()
 
-    def irl_draw(self,):
+    def irl_draw(self):
         self.print_odds()
         count = 1
         options, valid, choice = [], False, ''
@@ -81,11 +81,13 @@ class Lottery:
 
     def print_odds(self):
         print
-        print '{}{}'.format('Order'.ljust(20), 'Odds')
-        print '-' * 26
+        print '{} | {} | {} | {}'.format('Rd'.rjust(3), 'Team'.ljust(5), 'Rd Odds'.rjust(6), 'Tot Odds')
+        # print '{}{}'.format('Order'.ljust(20), 'Odds')
+        print '-' * 32
         for i, v in enumerate(self.lotto_order):
-            team = v[0] + ' '
-            print '{} {} {}%'.format('{}.'.format(i + 1).rjust(3), team.upper().ljust(15, '.'), str(v[1]).rjust(5))
+            team = v[0]
+            print '{} | {} | {}% |'.format(str((i + 1)).rjust(3), team.upper().ljust(5), str(v[1]).rjust(6))
+            # print '{} {} {}%'.format('{}.'.format(i + 1).rjust(3), team.upper().ljust(7), str(v[1]).rjust(6))
 
         if len(self.team_odds) > 1:
             print
@@ -98,7 +100,7 @@ class Lottery:
     def get_odds(self):
         projected = []
         for team, combos in self.teams_in_lotto.items():
-            odds = round(float(len(combos)) / float(len(self.combo_pool)) * 100, 2)
+            odds = round(float(len(combos)) / float(len(self.combo_pool)) * 100, 1)
             projected.append((team, odds))
 
         projected.sort(key=self.get_key, reverse=True)
