@@ -19,10 +19,8 @@ class Lottery:
             "Tyler": 1
         }
         self.teams_in_lotto = {}
-        self.teams_picked = {}
         self.combo_pool = []
         self.lotto_order = []
-        self.chosen = []
         self.manual = False
 
     def main(self):
