@@ -34,7 +34,6 @@ class Lottery:
             else:
                 self.auto_draw()
 
-        self.manual = True
         self.print_odds()
 
     def irl_draw(self,):
@@ -63,13 +62,12 @@ class Lottery:
                     self.lotto_order.append(chosen)
 
                     self.combo_pool = [x for x in self.combo_pool if x not in self.teams_in_lotto[chosen[0]]]
+                    del self.teams_in_lotto[chosen[0]]
+                    print
                 else:
                     print 'Enter a number between 1 and {}'.format(len(options))
             except ValueError:
                 print 'Enter a number between 1 and {}'.format(len(options))
-
-        del self.teams_in_lotto[chosen[0]]
-        print
 
     def auto_draw(self):
         pick = self.draw_numbers()
