@@ -1,75 +1,139 @@
-import json
+import itertools
+import random
 
 
-def main():
-    # Open the json with the assigned ball combos for the teams. This is generated ahead of time by another script
-    with open('combos.json', 'rb') as f:
-        players_in_draft = json.load(f)
+class Lottery:
+    def __init__(self):
+        self.team_odds = {
+            "Nick": 16,
+            "Mike": 15,
+            "Chris": 14,
+            "Jeff": 13,
+            "Shawn": 11,
+            "Pags": 9,
+            "Conor": 8,
+            "Andy": 6,
+            "Matt": 5,
+            "Drew": 4,
+            "Ben": 3,
+            "Tyler": 1
+        }
+        self.teams_in_lotto = {}
+        self.teams_picked = {}
+        self.combo_pool = []
+        self.lotto_order = []
+        self.chosen = []
+        self.manual = False
 
-    # Combines all the possible combinations into a pool to be referenced by the random number selection
-    combo_pool, lotto_order = [], []
-    for key, combos in players_in_draft.items():
-        combo_pool.extend(combos)
+    def main(self):
+        self.assign_combos()
+        while self.teams_in_lotto:
+            self.get_odds()
+            if self.manual:
+                self.irl_draw()
+            else:
+                self.auto_draw()
 
-    while players_in_draft:
-        odds = print_odds(players_in_draft, combo_pool, lotto_order)
+        self.manual = True
+        self.print_odds()
 
+    def irl_draw(self,):
+        self.print_odds()
         count = 1
         options, valid, choice = [], False, ''
         print
         print
-        for team, combos in players_in_draft.items():
+        for team in self.team_odds:
             if count % 2 == 0:
-                print '{} {}'.format('{}.'.format(count).ljust(3), team.ljust(12))
+                print '{} {}'.format('{}.'.format(count).ljust(3), team[0].ljust(12))
             else:
-                print '{} {}|'.format('{}.'.format(count).ljust(3), team.ljust(12)),
+                print '{} {}|'.format('{}.'.format(count).ljust(3), team[0].ljust(12)),
             count += 1
             options.append(team)
 
         while not valid:
             try:
-                if len(players_in_draft) % 2 != 0:
+                if len(self.teams_in_lotto) % 2 != 0:
                     print
                 choice = int(raw_input('\nWho was selected this round? > '))
                 if 0 < choice <= len(options):
                     valid = True
                     choice = options[choice - 1]
-                    odds = [x[1] for x in odds if choice in x]
-                    lotto_order.append((choice, odds[0]))
-                    combo_pool = [x for x in combo_pool if x not in players_in_draft[choice]]
+                    chosen = [x for x in self.team_odds if choice == x][0]
+                    self.lotto_order.append(chosen)
+
+                    self.combo_pool = [x for x in self.combo_pool if x not in self.teams_in_lotto[chosen[0]]]
                 else:
                     print 'Enter a number between 1 and {}'.format(len(options))
             except ValueError:
                 print 'Enter a number between 1 and {}'.format(len(options))
 
-        del players_in_draft[choice]
+        del self.teams_in_lotto[chosen[0]]
         print
 
+    def auto_draw(self):
+        pick = self.draw_numbers()
+        for team, team_combos in self.teams_in_lotto.items():
+            if pick in team_combos:
+                pick = team
+                chosen = [x for x in self.team_odds if pick == x[0]][0]
+                self.lotto_order.append(chosen)
+                break
 
-def print_odds(teams_left, combo_pool, lotto_order):
-    print
-    print '{}{}'.format('Order'.ljust(20), 'Odds')
-    print '-' * 26
-    for i, v in enumerate(lotto_order):
-        print '{}{}{}%'.format('{}.'.format(i + 1).ljust(3), v[0].upper().ljust(17), v[1])
+        self.combo_pool = [x for x in self.combo_pool if x not in self.teams_in_lotto[pick]]
+        del self.teams_in_lotto[pick]
 
-    print
-    print '{}{}'.format('Teams Left'.ljust(20), 'Chance')
-    print '-' * 26
-    projected = []
-    for team, combos in teams_left.items():
-        odds = round(float(len(combos)) / float(len(combo_pool)) * 100, 2)
-        projected.append((team, odds))
+    def print_odds(self):
+        print
+        print '{}{}'.format('Order'.ljust(20), 'Odds')
+        print '-' * 26
+        for i, v in enumerate(self.lotto_order):
+            team = v[0] + ' '
+            print '{} {} {}%'.format('{}.'.format(i + 1).rjust(3), team.upper().ljust(15, '.'), str(v[1]).rjust(5))
 
-    projected.sort(key=get_key, reverse=True)
-    for index, team in enumerate(projected):
-        print '{} {}%'.format('{}.'.format((team[0] + ' ').upper().ljust(18, '.')), team[1])
+        if len(self.team_odds) > 1:
+            print
+            print '{}{}'.format('Teams Left'.ljust(20), 'Chance')
+            print '-' * 26
 
-    return projected
+            for index, team in enumerate(self.team_odds):
+                print '{} {}%'.format('{}.'.format((team[0] + ' ').upper().ljust(18, '.')), team[1])
 
+    def get_odds(self):
+        projected = []
+        for team, combos in self.teams_in_lotto.items():
+            odds = round(float(len(combos)) / float(len(self.combo_pool)) * 100, 2)
+            projected.append((team, odds))
 
-def get_key(item):
-    return item[1]
+        projected.sort(key=self.get_key, reverse=True)
+        self.team_odds = projected
+
+    def assign_combos(self):
+        tmp_combo_list = []
+        for i in itertools.combinations(range(1, 16), 2):
+            self.combo_pool.append(i)
+            tmp_combo_list.append(i)
+
+        for team, num_of_combos in self.team_odds.items():
+            team = team.lower()
+            for i in range(num_of_combos):
+                if not self.teams_in_lotto.get(team):
+                    self.teams_in_lotto[team] = []
+
+                combo = random.choice(tmp_combo_list)
+                self.teams_in_lotto[team].append(combo)
+                tmp_combo_list.remove(combo)
+                random.shuffle(tmp_combo_list)
+
+    def draw_numbers(self):
+        random.shuffle(self.combo_pool)
+        combo = random.choice(self.combo_pool)
+        return combo
+
+    @staticmethod
+    def get_key(item):
+        return item[1]
 
 if __name__ == '__main__':
-    main()
+    lotto = Lottery()
+    lotto.main()
