@@ -1,5 +1,6 @@
 import itertools
 import random
+import json
 
 
 class Lottery:
@@ -22,8 +23,11 @@ class Lottery:
         self.combo_pool = []
         self.lotto_order = []
         self.manual = False
+        self.avg_odds = {}
 
     def main(self):
+        with open('results.json', 'rb') as f:
+            self.avg_odds.update(json.load(f))
         self.assign_combos()
         while self.teams_in_lotto:
             self.get_odds()
@@ -81,12 +85,15 @@ class Lottery:
 
     def print_odds(self):
         print
-        print '{} | {} | {} | {}'.format('Rd'.rjust(3), 'Team'.ljust(5), 'Rd Odds'.rjust(6), 'Tot Odds')
-        # print '{}{}'.format('Order'.ljust(20), 'Odds')
-        print '-' * 32
+        print '{} | {} | {} | {} | {}'.format('Rd'.rjust(3), 'Team'.ljust(5), 'Rd Odds'.rjust(6), 'Avg Odds', 'Luck')
+        print '-' * 39
         for i, v in enumerate(self.lotto_order):
-            team = v[0]
-            print '{} | {} | {}% |'.format(str((i + 1)).rjust(3), team.upper().ljust(5), str(v[1]).rjust(6))
+            team = v[0].upper().ljust(5)
+            rd = str((i + 1))
+            round_odds = str(v[1]).rjust(6)
+            average_odds = str(round(float(self.avg_odds[v[0]][rd]) / 100, 1)).rjust(7)
+            luck = str(int(self.avg_odds[v[0]]['avg'] - int(rd)))
+            print '{} | {} | {}% | {}% | {}'.format(rd.rjust(3), team, round_odds, average_odds, luck.rjust(3))
             # print '{} {} {}%'.format('{}.'.format(i + 1).rjust(3), team.upper().ljust(7), str(v[1]).rjust(6))
 
         if len(self.team_odds) > 1:
@@ -122,6 +129,9 @@ class Lottery:
                 self.teams_in_lotto[team].append(combo)
                 tmp_combo_list.remove(combo)
                 random.shuffle(tmp_combo_list)
+
+        with open('combos.json', 'wb') as f:
+            f.write(json.dumps(self.teams_in_lotto))
 
     def draw_numbers(self):
         random.shuffle(self.combo_pool)

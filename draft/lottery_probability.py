@@ -1,8 +1,9 @@
 import random
 import json
 import progress
+import itertools
 
-ITERATIONS = 1000
+ITERATIONS = 10000
 
 
 def main():
@@ -35,7 +36,7 @@ def main():
         teams_still_in_lottery = dict(teams)
         random.shuffle(random_num_pool)
         iterations_random_numbers = list(random_num_pool)
-        selected = []
+        iterations_combo_pool = list(combo_pool)
 
         while teams_still_in_lottery:
             # "Draw" a number from the combo pool and if it belongs to a team that hasn't already been picked continue
@@ -44,42 +45,45 @@ def main():
                 results[teams_still_in_lottery.keys()[0]][12] += 1
                 break
             else:
-                draw = combo_pool[int(iterations_random_numbers.pop())]
+                random.shuffle(iterations_combo_pool)
+                draw = random.choice(iterations_combo_pool)
+                # draw = combo_pool[int(iterations_random_numbers.pop())]
 
-            if draw not in selected:
-                # Iterate through the teams still left in the draft and find who had the combo that was drawn
-                # Add all their combos to the selected list so they are not drawn again. Then delete them from the
-                # still_in_lottery dict and update the results dict with what round they got for a pick
-
-                for team, team_numbers in teams.items():
-                    if draw in team_numbers:
-                        selected.extend(teams[team])
-                        del teams_still_in_lottery[team]
-                        draft_round = 12 - len(teams_still_in_lottery)
-                        results[team][draft_round] += 1
+            for team, team_numbers in teams.items():
+                if draw in team_numbers:
+                    del teams_still_in_lottery[team]
+                    draft_round = 12 - len(teams_still_in_lottery)
+                    results[team][draft_round] += 1
+                    iterations_combo_pool = [y for y in iterations_combo_pool if y not in team_numbers]
         bar.update(x)
+
+    for team, value in results.items():
+        pick_rounds = sorted(value.items(), key=lambda x: x[1])
+        adp = pick_rounds[-1][0]
+        results[team]['avg'] = adp
 
     print '\n', json.dumps(results, separators=[',', ':'], indent=2)
 
-    # with open('output.csv', 'wb') as f:
-    #     fieldnames = ['name', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-    #     writer = csv.DictWriter(f, fieldnames=fieldnames)
-    #     writer.writerows(writable_results)
-    #
-    # for team, results in results.items():
-    #     writable_results.append(results)
-    #
-    #     for k, v in results.items():
-    #         print "\n{}'s Results".format(k)
-    #         print '-' * 15
-    #         ordered = OrderedDict(sorted(v.items()))
-    #         for key, value in ordered.iteritems():
-    #             try:
-    #                 tot = float(value)
-    #                 pct = tot / float(ITERATIONS) * 100
-    #                 print "Round {} - {}%".format(key, pct)
-    #             except ValueError:
-    #                 pass
+    with open('results.json', 'wb') as f:
+        f.write(json.dumps(results, separators=[',', ':'], indent=2))
+
+
+def assign_combos(self):
+    tmp_combo_list = []
+    for i in itertools.combinations(range(1, 16), 2):
+        self.combo_pool.append(i)
+        tmp_combo_list.append(i)
+
+    for team, num_of_combos in self.team_odds.items():
+        team = team.lower()
+        for i in range(num_of_combos):
+            if not self.teams_in_lotto.get(team):
+                self.teams_in_lotto[team] = []
+
+            combo = random.choice(tmp_combo_list)
+            self.teams_in_lotto[team].append(combo)
+            tmp_combo_list.remove(combo)
+            random.shuffle(tmp_combo_list)
 
 if __name__ == '__main__':
     main()
